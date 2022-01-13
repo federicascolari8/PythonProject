@@ -332,7 +332,7 @@ if __name__ == '__main__':
                      'nachher': {'1': 'red', '2': 'darkorange', '3': 'saddlebrown', '4': 'darkorange'}
                      }
 
-    df, _ = get_overview_df(search_in_dir=str(cur_dir / '02_freezecores/Vergleich_Spülung/'), outputpath='overview_fc_spuelung.csv')
+    df, _ = get_overview_df(search_in_dir=str(cur_dir), outputpath='overview_fc_spuelung.csv')
     # df = pd.read_csv('overview_fc_spuelung.csv',
     #                  index_col=0)  # If the file is already available, this line reads it to directly.
 
