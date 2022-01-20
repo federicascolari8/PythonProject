@@ -79,7 +79,7 @@ def find_files(folder=None):
     return file_list
 
 
-def append_global(obj=None, df=None, file=None):
+def append_global(obj=None, df=None):
     """ A function to append all information stemming from the class
     Statistical Analyzer into one dataframe for further filtering and analyses
     :param obj: object of the class StatisticalAnalyzer
@@ -96,30 +96,40 @@ def append_global(obj=None, df=None, file=None):
     df_stat.reset_index(drop=True, inplace=True)
 
     # extract name and date of the sample
-    df_name_date = pd.read_excel(file, engine="openpyxl")
-    sample_name = df_name_date.at[input["index_sample_name"][0] - 2,
-                                  df_name_date.columns[input["index_sample_name"][1] - 1]]
-    sample_date = df_name_date.at[input["index_sample_date"][0] - 2,
-                                  df_name_date.columns[input["index_sample_date"][1] - 1]]
+    np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
+    df_meta = pd.DataFrame(columns=["sample name", "date", "coordinates"],
+                           data=np.array([[obj.samplename, obj.sampledate, obj.coords]]))
 
-    # organize porosity and conductivity to append in global df
+    # extract porosity and conductivity
     list_name = obj.porosity_conductivity_df["Name"].to_list()
     list_name_new = []
     for name in list_name:
         list_name_new.append("{} [Porosity]".format(name))
+    for name in list_name:
         list_name_new.append("{} [Estimated kf]".format(name))
 
-    df_temp = pd.DataFrame(columns=list_name_new)
+    df_copo = pd.DataFrame(columns=list_name_new)
     new_row = obj.porosity_conductivity_df["Porosity"].to_list()
     new_row = new_row + obj.porosity_conductivity_df["Corresponding kf [m/s]"].to_list()
-    df_temp.loc[0] = new_row
+    df_copo.loc[0] = new_row
 
-    # join df_stat and df_poro_cond
-    df_add = pd.concat([df_stat, df_temp], axis=1)
+    # extract cumulative
+    df_cum = pd.DataFrame(data=[obj.cumulative_df["Cummulative Percentage [%]"].to_numpy()],
+                          columns=obj.cumulative_df["Grain Sizes [mm]"].to_numpy())
 
+    # join dataframes
+    df_add = pd.concat([df_meta, df_stat, df_copo, df_cum], axis=1)
+
+    # append global dataframe in global
     if df.empty:
-        d = 1  # append the first dataframe with columns names
+        df = df_add
     else:
-        d = 3  # append only values of the new file
+        df = df.append(df_add,ignore_index=True)
 
+    return df
+
+
+def print_excel(df):
+
+    df.to_excel("plot/global_dataframe.xlsx")
     pass

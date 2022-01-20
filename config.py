@@ -38,7 +38,7 @@ input = {"header": 9,   # number of lines with a header before the dataset
          "SF_porosity": 6.10,  # default for rounded sediment
          "index_lat": None,  # coordinates of the sample (tuple variable)
          "index_long": None,
-         "folder_path": "C:\\Users\\beatr\\PythonProject\\datasets",
+         "folder_path": "datasets",
          # count row and columns stating from 1 (e.g., 1,2,3....,n)
          "index_sample_name": [3, 8],  # index of excel sheet that contains the name of the sample
          "index_sample_date": [3, 9] # index of excel sheet that contains date that the sample was collected
