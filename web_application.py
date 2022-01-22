@@ -20,7 +20,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 suppress_callback_exceptions=True)
 
-app.layout = html.Div([ # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
+app.layout = html.Div([  # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -40,12 +40,12 @@ app.layout = html.Div([ # this code section taken from Dash docs https://dash.pl
         # Allow multiple files to be uploaded
         multiple=True
     ),
-    html.Div(id='output-div'),
-    html.Div(id='output-datatable'),
+    # html.Div(id='output-div'),
+    html.Div(id='output-messages')
 ])
 
 
-def parse_contents(contents, filename, date, df_global):
+def parse_contents(contents, filename, date):
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
@@ -68,7 +68,7 @@ def parse_contents(contents, filename, date, df_global):
         # get sample name
         try:
             samplename = dff.iat[input["index_sample_name"][0], input["index_sample_name"][1]]
-        except :
+        except:
             samplename = None
             pass
 
@@ -94,72 +94,84 @@ def parse_contents(contents, filename, date, df_global):
                       inplace=True)
 
         analyzer = StatisticalAnalyzer(sieving_df=dff_gs, metadata=metadata)
-        df_global = append_global(obj=analyzer,
-                                  df=df_global
-                                  )
 
     except Exception as e:
         print(e)
-        return html.Div([
-            'There was an error processing the file. Ensure that your file does not contain too many columns (< 15).'
-        ])
+        return html.Div([filename,
+                         ': There was an error processing the file. Ensure that your file does not contain too many columns (< 15).'
+                         ])
 
-    return html.Div([
-        html.H5(filename),
-        # html.H6(datetime.datetime.fromtimestamp(date)),
-        html.P("File successfully read"),
-        # dcc.Dropdown(id='xaxis-data',
-        #              options=[{'label':x, 'value':x} for x in df.columns]),
-        # html.P("Inset Y axis data"),
-        # dcc.Dropdown(id='yaxis-data',
-        #              options=[{'label':x, 'value':x} for x in df.columns]),
-        # html.Button(id="submit-button", children="Create Graph"),
-        html.Hr(),
+    return analyzer, html.Div([filename, ': File successfully read'])
+    # html.H5(filename),
+    # html.H6(datetime.datetime.fromtimestamp(date)),
+    # html.P("Inset X axis data"),
+    # dcc.Dropdown(id='xaxis-data',
+    #              options=[{'label':x, 'value':x} for x in df.columns]),
+    # html.P("Inset Y axis data"),
+    # dcc.Dropdown(id='yaxis-data',
+    #              options=[{'label':x, 'value':x} for x in df.columns]),
+    # html.Button(id="submit-button", children="Create Graph"),
+    # html.Hr(),  # horizontal line
 
-        #  Print data table of the grain sizes and class weights:
-        dash_table.DataTable(
-            data=dff_gs.to_dict('records'),
-            columns=[{'name': i, 'id': i} for i in dff_gs.columns],
-            page_size=30
-        ),
-        dcc.Store(id='stored-data', data=dff_gs.to_dict('records')),
+    # Print grains izes and class weights
+    # dash_table.DataTable(
+    #     data=dff_gs.to_dict('records'),
+    #     columns=[{'name': i, 'id': i} for i in dff_gs.columns],
+    #     page_size=30
+    # ),
+    # dcc.Store(id='stored-data', data=dff_gs.to_dict('records')),
 
-        html.Hr(),  # horizontal line
-
-        # For debugging, display the raw contents provided by the web browser
-        html.Div('Raw Content'),
-        html.Pre(contents[0:200] + '...', style={
-            'whiteSpace': 'pre-wrap',
-            'wordBreak': 'break-all'
-        })
-    ])
+    # For debugging, display the raw contents provided by the web browser
+    # html.Div('Raw Content'),
+    # html.Pre(contents[0:200] + '...', style={
+    #     'whiteSpace': 'pre-wrap',
+    #     'wordBreak': 'break-all'
+    # })
 
 
-@app.callback(Output('output-datatable', 'children'),
+# callback function for the Upload box
+@app.callback(Output('output-messages', 'children'),
               Input('upload-data', 'contents'),
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'))
 def update_output(list_of_contents, list_of_names, list_of_dates):
+    global df_print
     if list_of_contents is not None:
         df_global = pd.DataFrame()
-        children = [
-            parse_contents(c, n, d, df_global) for c, n, d in
-            zip(list_of_contents, list_of_names, list_of_dates)]
+        children = []
+        analyzers = []
+
+        # iterating through files and appending reading messages as well as
+        # analysis objects (analyzers)
+        for c, n, d in zip(list_of_contents, list_of_names, list_of_dates):
+            from_parsing = parse_contents(c, n, d)
+            children.append(from_parsing[1])
+            analyzers.append(from_parsing[0])
+        # append all information from the list of analyzers into a global df
+        for inter_analyzer in analyzers:
+            df_global = append_global(obj=inter_analyzer,
+                                      df=df_global
+                                      )
+            df_print = df_global.iloc[:, 0:12]
+            print(df_print)
         return children
+        # return children.append(html.Div(
+        #     [dcc.Store(id='stored-data', data=df_global.to_dict('records'))]
+        # ))
 
 
-@app.callback(Output('output-div', 'children'),
-              Input('submit-button','n_clicks'),
-              State('stored-data','data'),
-              State('xaxis-data','value'),
-              State('yaxis-data', 'value'))
-def make_graphs(n, data, x_data, y_data):
-    if n is None:
-        return dash.no_update
-    else:
-        bar_fig = px.bar(data, x=x_data, y=y_data)
-        # print(data)
-        return dcc.Graph(figure=bar_fig)
+# @app.callback(Output('output-div', 'children'),
+#               Input('submit-button', 'n_clicks'),
+#               State('stored-data', 'data'),
+#               State('xaxis-data', 'value'),
+#               State('yaxis-data', 'value'))
+# def make_graphs(n, data, x_data, y_data):
+#     if n is None:
+#         return dash.no_update
+#     else:
+#         bar_fig = px.bar(data, x=x_data, y=y_data)
+#         # print(data)
+#         return dcc.Graph(figure=bar_fig)
 
 
 if __name__ == '__main__':
