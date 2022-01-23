@@ -21,13 +21,18 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 suppress_callback_exceptions=True)
 
 app.layout = html.Div([  # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
-html.H1("Sediment Analyst", style={'text-align': 'center'}),
-    dcc.Upload(
+    html.H1("Sediment Analyst", style={'text-align': 'center'}),  # header
+    dcc.Textarea(  # Web description
+        id='text-intro',
+        value='A web application for interactive sedimentological analyses',
+        style={'width': '100%', 'height': 100}
+                ),
+    dcc.Upload(  # drop and drag upload area for inputing files
         id='upload-data',
         children=html.Div([
             'Drag and Drop or ',
             html.A('Select Files')
-        ]),
+                ]),
         style={
             'width': '100%',
             'height': '60px',
@@ -37,9 +42,8 @@ html.H1("Sediment Analyst", style={'text-align': 'center'}),
             'borderRadius': '5px',
             'textAlign': 'center',
             'margin': '10px'
-        },
-        # Allow multiple files to be uploaded
-        multiple=True
+            },
+        multiple=True  # Allow multiple files to be uploaded
     ),
     # html.Div(id='output-div'),
     html.Div(id='output-messages')
