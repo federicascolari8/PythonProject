@@ -4,7 +4,7 @@ import io
 
 import dash
 from dash.dependencies import Input, Output, State
-import dash_core_components as dcc
+from dash import dcc
 import dash_html_components as html
 import dash_table
 import plotly.express as px
@@ -21,6 +21,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 suppress_callback_exceptions=True)
 
 app.layout = html.Div([  # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
+html.H1("Sediment Analyst", style={'text-align': 'center'}),
     dcc.Upload(
         id='upload-data',
         children=html.Div([
@@ -135,7 +136,6 @@ def parse_contents(contents, filename, date):
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'))
 def update_output(list_of_contents, list_of_names, list_of_dates):
-    global df_print
     if list_of_contents is not None:
         df_global = pd.DataFrame()
         children = []
@@ -152,12 +152,25 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             df_global = append_global(obj=inter_analyzer,
                                       df=df_global
                                       )
-            df_print = df_global.iloc[:, 0:12]
-            print(df_print)
+        # return children
+        children.append(html.Div(
+            [dcc.Store(id='stored-data', data=df_global.to_dict('records')),
+             html.Button("Download Summary Statistics", id="btn_download"),
+             dcc.Download(id="download-dataframe-csv")
+             ]
+        ))
         return children
-        # return children.append(html.Div(
-        #     [dcc.Store(id='stored-data', data=df_global.to_dict('records'))]
-        # ))
+
+
+@app.callback(
+    Output("download-dataframe-csv", "data"),
+    State('stored-data', 'data'),
+    Input("btn_download", "n_clicks"),
+    prevent_initial_call=True,
+)
+def func(data, n_clicks):
+    dataframe_global = pd.DataFrame(data)
+    return dcc.send_data_frame(dataframe_global.to_csv, "overall_statistics.csv")
 
 
 # @app.callback(Output('output-div', 'children'),
