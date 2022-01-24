@@ -12,6 +12,7 @@ Functions:
 """
 # from config import *
 from statistical_analyzer import StatisticalAnalyzer
+from static_plotter import StaticPlotter
 from utils import *
 
 
@@ -25,6 +26,11 @@ def main():
     # print statistics as excel
     analyzer.print_excel()
 
+    # call the class StaticPlotter
+    plotter = StaticPlotter(analyzer)
+
+    # plot the cumulative grain size ditribution curve
+    plotter.cum_plotter("cum_curve.png")
     pass
 
 

@@ -38,7 +38,7 @@ class StatisticalAnalyzer:
         """
         create two new columns in the grain size dataframe, which are:
         + Percentage Fraction [%] and
-        + Cummulative Percentage [%]
+        + Cumulative Percentage [%]
         :return: None
         """
         # initialize cumulative dataframe
@@ -46,7 +46,7 @@ class StatisticalAnalyzer:
 
         # create new columns float type in dataframe
         self.cumulative_df["Percentage Fraction [%]"] = np.nan
-        self.cumulative_df["Cummulative Percentage [%]"] = np.nan
+        self.cumulative_df["Cumulative Percentage [%]"] = np.nan
 
         # compute percentage fraction
         total_weight = self.original_df.sum()[1]
@@ -55,12 +55,12 @@ class StatisticalAnalyzer:
         # fill cumulative percentage column
         for i, value in reversed(list(enumerate(self.cumulative_df["Percentage Fraction [%]"]))):
             if i + 1 == len(self.cumulative_df["Percentage Fraction [%]"]):
-                self.cumulative_df.at[i, "Cummulative Percentage [%]"] = self.cumulative_df["Percentage Fraction [%]"][
+                self.cumulative_df.at[i, "Cumulative Percentage [%]"] = self.cumulative_df["Percentage Fraction [%]"][
                     i]
             else:
                 cumulative = self.cumulative_df.at[i, "Percentage Fraction [%]"] \
-                             + self.cumulative_df.at[i + 1, "Cummulative Percentage [%]"]
-                self.cumulative_df.at[i, "Cummulative Percentage [%]"] = cumulative
+                             + self.cumulative_df.at[i + 1, "Cumulative Percentage [%]"]
+                self.cumulative_df.at[i, "Cumulative Percentage [%]"] = cumulative
         pass
 
     def compute_statistics_df(self):
@@ -187,7 +187,7 @@ class StatisticalAnalyzer:
             self.statistics_df.at[n, "Name"] = "d{s}".format(s=ds[n])
 
             # assign value to ds
-            boolean_filter = self.__interpolation_df["Cummulative (interpolated) "] == ds[n]
+            boolean_filter = self.__interpolation_df["Cumulative (interpolated) "] == ds[n]
             ds_value = self.__interpolation_df[boolean_filter.to_list()].iat[0, 1]
             self.statistics_df.at[n, "Value"] = ds_value
 
@@ -217,14 +217,14 @@ class StatisticalAnalyzer:
     def __compute_interp_df(self):
         # extract data from sample
         y = np.flip(np.array(self.cumulative_df["Grain Sizes [mm]"]))
-        x = np.flip(np.array(self.cumulative_df["Cummulative Percentage [%]"]))
+        x = np.flip(np.array(self.cumulative_df["Cumulative Percentage [%]"]))
 
-        # estimate grain size linearly for a increase of 0.25% of cummulative percentage
+        # estimate grain size linearly for a increase of 0.25% of cumulative percentage
         x_vals = np.linspace(0, 100, 401)
         y_intepolated = np.interp(x_vals, x, y)
 
         # fill dataframe with results of interpolation
-        self.__interpolation_df["Cummulative (interpolated) "] = x_vals
+        self.__interpolation_df["Cumulative (interpolated) "] = x_vals
         self.__interpolation_df["Grain size (interpolated) "] = y_intepolated
 
         pass
@@ -301,8 +301,8 @@ class StatisticalAnalyzer:
         :return:
         """
         geometric_std = self.statistics_df.at[14, "Value"]
-        cummulative_5mm = self.cumulative_df.at[9, "Cummulative Percentage [%]"] / 100
-        frings = 0.353 - 0.068 * geometric_std + 0.146 * cummulative_5mm
+        cumulative_5mm = self.cumulative_df.at[9, "Cumulative Percentage [%]"] / 100
+        frings = 0.353 - 0.068 * geometric_std + 0.146 * cumulative_5mm
         self.porosity_conductivity_df.at[3, "Porosity"] = frings
         pass
 
@@ -361,3 +361,4 @@ class StatisticalAnalyzer:
         kozeny_carman_kf = cte * ((Deff_i_cm / 100) ** 2) * (1 / (SF ** 2)) * ((e ** 3) / (1 + e))
 
         return kozeny_carman_kf
+
