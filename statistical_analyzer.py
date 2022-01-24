@@ -11,28 +11,29 @@ class StatisticalAnalyzer:
     A class for computing statistical sedimentological parameters using sieving datasets
     """
 
-    def __init__(self, sieving_df=None):
+    def __init__(self, sieving_df=None, metadata=None):
         """
         :param sieving_df: Pandas Dataframe containing the sieving results of a sediment sample
         """
-        try:
-            # Attributes
-            self.original_df = sieving_df
-            self.cumulative_df = pd.DataFrame()
-            self.statistics_df = pd.DataFrame()
-            self.__interpolation_df = pd.DataFrame()
-            self.porosity_conductivity_df = pd.DataFrame()
 
-            # Methods
-            self.compute_cumulative_df()
-            self.__compute_interp_df()
-            self.compute_statistics_df()
-            self.compute_porosity_conductivity_df()
-            self.test = 2
-        except Exception as e:
-            logging.error("StatisticalAnalyzer property fail")
-            print(e)
-            pass
+        # Attributes
+        self.original_df = sieving_df
+        self.cumulative_df = pd.DataFrame()
+        self.statistics_df = pd.DataFrame()
+        self.__interpolation_df = pd.DataFrame()
+        self.porosity_conductivity_df = pd.DataFrame()
+        self.samplename = metadata[0]
+        self.sampledate = metadata[1]
+        self.coords = metadata[2]
+
+        # Methods
+        self.compute_cumulative_df()
+        self.__compute_interp_df()
+        self.compute_statistics_df()
+        self.compute_porosity_conductivity_df()
+        self.test = 2
+
+
 
     def compute_cumulative_df(self):
         """

@@ -64,3 +64,4 @@ class StaticPlotter:
         ax.set_xlim(left=0.031, right=250)
         ax.set_xlabel('Grain Size [mm]')
         ax.set_ylabel('Sieving Fraction [%]')
+

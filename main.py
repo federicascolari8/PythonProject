@@ -16,21 +16,36 @@ from static_plotter import StaticPlotter
 from utils import *
 
 
+
+
 def main():
-    # extract the sieving table from excel or csv
-    sieving_df = extract_df(dic=input)
+    # initiate dataframe to hold all the  the samples statistics
+    df_global = pd.DataFrame()
 
-    # call the class StatisticalAnalyzer
-    analyzer = StatisticalAnalyzer(sieving_df=sieving_df)
+    # loop through all the samples and compute corresponding
+    for i, file_name in enumerate(find_files(input["folder_path"])):
+        # extract the sieving table from excel or csv
+        sieving_df, metadata = extract_df(dic=input, file=file_name)
 
-    # print statistics as excel
-    analyzer.print_excel()
+        # call the class StatisticalAnalyzer
+        analyzer = StatisticalAnalyzer(sieving_df=sieving_df, metadata=metadata)
+        # print(analyzer.sampledate, analyzer.samplename, analyzer.coords)
 
-    # call the class StaticPlotter
-    plotter = StaticPlotter(analyzer)
 
-    # plot the cumulative grain size ditribution curve
-    plotter.cum_plotter("cum_curve.png")
+        # append global dataframe
+        df_global = append_global(obj=analyzer,
+                                  df=df_global
+                                   )
+
+        # call the class StaticPlotter
+        plotter = StaticPlotter(analyzer)
+
+        # plot the cumulative grain size distribution curve
+        plotter.cum_plotter("filename + png")
+
+    print_excel(df=df_global)
+
+
     pass
 
 
