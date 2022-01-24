@@ -4,9 +4,7 @@ import io
 
 import dash
 from dash.dependencies import Input, Output, State
-from dash import dcc
-import dash_html_components as html
-import dash_table
+from dash import dcc, Input, Output, State, html
 import plotly.express as px
 import openpyxl
 from statistical_analyzer import *
@@ -19,6 +17,16 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 suppress_callback_exceptions=True)
+style_upload = {
+    'width': '100%',
+    'height': '60px',
+    'lineHeight': '60px',
+    'borderWidth': '1px',
+    'borderStyle': 'dashed',
+    'borderRadius': '5px',
+    'textAlign': 'center',
+    'margin': '10px'
+}
 
 app.layout = html.Div([  # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
     html.H1("Sediment Analyst", style={'text-align': 'center'}),  # header
@@ -26,23 +34,15 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         id='text-intro',
         value='A web application for interactive sedimentological analyses',
         style={'width': '100%', 'height': 100}
-                ),
+    ),
+    dcc.Graph(id="map"),
     dcc.Upload(  # drop and drag upload area for inputing files
         id='upload-data',
         children=html.Div([
             'Drag and Drop or ',
             html.A('Select Files')
-                ]),
-        style={
-            'width': '100%',
-            'height': '60px',
-            'lineHeight': '60px',
-            'borderWidth': '1px',
-            'borderStyle': 'dashed',
-            'borderRadius': '5px',
-            'textAlign': 'center',
-            'margin': '10px'
-            },
+        ]),
+        style=style_upload,
         multiple=True  # Allow multiple files to be uploaded
     ),
     # html.Div(id='output-div'),
@@ -69,6 +69,7 @@ def parse_contents(contents, filename, date):
         dff_gs = dff.iloc[input["header"]: input["header"] + input["n_rows"], columns_to_get]
         dff_gs.reset_index(inplace=True, drop=True)
         dff_gs = dff_gs.astype(float)
+
         # Get metadata from the dataframe
         # get sample name
         try:
@@ -107,31 +108,6 @@ def parse_contents(contents, filename, date):
                          ])
 
     return analyzer, html.Div([filename, ': File successfully read'])
-    # html.H5(filename),
-    # html.H6(datetime.datetime.fromtimestamp(date)),
-    # html.P("Inset X axis data"),
-    # dcc.Dropdown(id='xaxis-data',
-    #              options=[{'label':x, 'value':x} for x in df.columns]),
-    # html.P("Inset Y axis data"),
-    # dcc.Dropdown(id='yaxis-data',
-    #              options=[{'label':x, 'value':x} for x in df.columns]),
-    # html.Button(id="submit-button", children="Create Graph"),
-    # html.Hr(),  # horizontal line
-
-    # Print grains izes and class weights
-    # dash_table.DataTable(
-    #     data=dff_gs.to_dict('records'),
-    #     columns=[{'name': i, 'id': i} for i in dff_gs.columns],
-    #     page_size=30
-    # ),
-    # dcc.Store(id='stored-data', data=dff_gs.to_dict('records')),
-
-    # For debugging, display the raw contents provided by the web browser
-    # html.Div('Raw Content'),
-    # html.Pre(contents[0:200] + '...', style={
-    #     'whiteSpace': 'pre-wrap',
-    #     'wordBreak': 'break-all'
-    # })
 
 
 # callback function for the Upload box
@@ -157,12 +133,15 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
                                       df=df_global
                                       )
         # return children
-        children.append(html.Div(
-            [dcc.Store(id='stored-data', data=df_global.to_dict('records')),
-             html.Button("Download Summary Statistics", id="btn_download"),
-             dcc.Download(id="download-dataframe-csv")
-             ]
-        ))
+        data2 = df_global.to_dict("split")
+        children.append(html.Div([
+            dcc.Store(id='stored-data', data=data2),
+            html.Button("Download Summary Statistics", id="btn_download"),
+            dcc.Download(id="download-dataframe-csv"),
+        ])
+        )
+        print("data2")
+
         return children
 
 
@@ -173,8 +152,20 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
     prevent_initial_call=True,
 )
 def func(data, n_clicks):
-    dataframe_global = pd.DataFrame(data)
+    print(data)
+    dataframe_global = pd.DataFrame(data=data["data"], columns=data["columns"])
     return dcc.send_data_frame(dataframe_global.to_csv, "overall_statistics.csv")
+
+
+@app.callback(
+    Output('map', 'figure'),
+    Input('stored-data', 'data'))
+def update_figure(data):
+    df = pd.DataFrame(data=data["data"], columns=data["columns"])
+    fig = create_map(df)
+    fig.update_layout(transition_duration=500)
+
+    return fig
 
 
 # @app.callback(Output('output-div', 'children'),

@@ -19,6 +19,8 @@ try:
     import glob
     import sys
     import os
+    from pyproj import Proj, transform
+    import plotly.express as px
 except:
     print(
         "Error importing necessary packages. Required packages")
@@ -36,10 +38,11 @@ input = {"header": 9,   # number of lines with a header before the dataset
          "n_rows": 16,  # number of rows (available class weights)
          "porosity": 0.1778,  # option to give porosity manually
          "SF_porosity": 6.10,  # default for rounded sediment
-         "index_lat": None,  # coordinates of the sample (tuple variable)
-         "index_long": None,
+         "index_lat": [5, 8],  # coordinates of the sample (tuple variable)
+         "index_long": [5, 9],
          "folder_path": "datasets",
          # count row and columns stating from 1 (e.g., 1,2,3....,n)
          "index_sample_name": [3, 8],  # index of excel sheet that contains the name of the sample
-         "index_sample_date": [3, 9] # index of excel sheet that contains date that the sample was collected
+         "index_sample_date": [3, 9],# index of excel sheet that contains date that the sample was collected
+         "projection":"epsg:3857", # add projection
          }

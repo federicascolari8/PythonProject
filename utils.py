@@ -97,8 +97,8 @@ def append_global(obj=None, df=None):
 
     # extract name and date of the sample
     np.warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
-    df_meta = pd.DataFrame(columns=["sample name", "date", "coordinates"],
-                           data=np.array([[obj.samplename, obj.sampledate, obj.coords]]))
+    df_meta = pd.DataFrame(columns=["sample name", "date", "lat", "lon"],
+                           data=np.array([[obj.samplename, obj.sampledate, obj.coords[0], obj.coords[1]]]))
 
     # extract porosity and conductivity
     list_name = obj.porosity_conductivity_df["Name"].to_list()
@@ -124,12 +124,67 @@ def append_global(obj=None, df=None):
     if df.empty:
         df = df_add
     else:
-        df = df.append(df_add,ignore_index=True)
+        df = df.append(df_add, ignore_index=True)
 
     return df
 
 
 def print_excel(df):
-
     df.to_excel("plot/global_dataframe.xlsx")
     pass
+
+
+def create_map(df, projection=input["projection"]):
+    """
+    create a scatter map based on the dataframe
+    :param df:
+    :param projection:
+    :return:
+    """
+    df = convert_coordinates(df=df,
+                             projection=projection)
+
+    fig = px.scatter_mapbox(df,
+                            lat=df["lat"],
+                            lon=df["lon"],
+                            hover_name="sample name",
+                            hover_data=df.columns[4:22],
+                            zoom=11)
+    fig.update_layout(
+        mapbox_style="open-street-map",
+    )
+    print(df.columns[4:33])
+    print(df)
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+    return fig
+
+
+def convert_coordinates(df, projection):
+    """
+    transform coordinates of a give projection in degrees
+    :param df:
+    :param projection:
+    :return:
+    """
+    # import projections
+    inproj = Proj(projection)  # Pseudo mercator
+    # inProj = Proj('epsg:25832') # any other projection (solution without correciton)
+    outproj = Proj('epsg:4326')  # WGS 83 degrees
+
+    iter = 0
+    for x1, y1 in df[["lat", "lon"]].itertuples(index=False):
+        x2, y2 = transform(inproj, outproj, x1, y1)
+        print(x2, y2)
+
+        # correction from epsg 3857
+        df.at[iter, "lat"] = y2 - 6.9752575
+        df.at[iter, "lon"] = x2 + 0.098607
+
+        # # solution with out correction
+        # df.at[iter, "lat"] = y2
+        # df.at[iter, "lon"] = x2
+
+        iter = +1
+
+    return df
