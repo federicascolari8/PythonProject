@@ -29,7 +29,6 @@ sieving_data_add = "datasets/KB08_FC_1-2_nachher.xlsx"
 
 # head and columns of the Grain Size (GS) and Class Weight (CW)
 
-
 input = {"sample_name": None,
          "header": 9,   # number of lines with a header before the dataset
          "gs_clm": 1,  # grain size column index (start with 0)
