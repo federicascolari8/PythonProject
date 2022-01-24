@@ -12,6 +12,7 @@ Functions:
 """
 # from config import *
 from statistical_analyzer import StatisticalAnalyzer
+from static_plotter import StaticPlotter
 from utils import *
 
 
@@ -35,11 +36,16 @@ def main():
         df_global = append_global(obj=analyzer,
                                   df=df_global
                                    )
+
+        # call the class StaticPlotter
+        plotter = StaticPlotter(analyzer)
+
+        # plot the cumulative grain size distribution curve
+        plotter.cum_plotter(file_name + ".png")
+
     print_excel(df=df_global)
 
-    # TODO Part2
-    # call the static plotter
-    # plotter = StaticPlotter(df_global)
+
     pass
 
 
