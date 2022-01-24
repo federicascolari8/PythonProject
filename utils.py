@@ -114,7 +114,7 @@ def append_global(obj=None, df=None):
     df_copo.loc[0] = new_row
 
     # extract cumulative
-    df_cum = pd.DataFrame(data=[obj.cumulative_df["Cummulative Percentage [%]"].to_numpy()],
+    df_cum = pd.DataFrame(data=[obj.cumulative_df["Cumulative Percentage [%]"].to_numpy()],
                           columns=obj.cumulative_df["Grain Sizes [mm]"].to_numpy())
 
     # join dataframes

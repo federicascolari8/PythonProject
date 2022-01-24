@@ -22,7 +22,7 @@ class StaticPlotter:
 
         plt.show()
         plt.tight_layout()
-        plt.savefig(output, dpi=200, bbox_inches='tight')
+        plt.savefig(output, dpi=200)
 
     def __set_primary_axis(self, ax):
         ax.text(0.22, 1.18, 'Sand', fontsize=10, transform=ax.transAxes, verticalalignment='top')

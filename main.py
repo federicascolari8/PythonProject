@@ -41,7 +41,7 @@ def main():
         plotter = StaticPlotter(analyzer)
 
         # plot the cumulative grain size distribution curve
-        plotter.cum_plotter("filename + png")
+        plotter.cum_plotter(file_name + ".png")
 
     print_excel(df=df_global)
 
