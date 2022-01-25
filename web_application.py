@@ -35,7 +35,27 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         value='A web application for interactive sedimentological analyses',
         style={'width': '100%', 'height': 100}
     ),
+    html.Br(),
+
+    # manual inputs
+    dcc.Input(id="header", type="number", placeholder="table's header"),
+    dcc.Input(id="gs_clm", type="number", placeholder="grain sizes table column number (start from zero)"),
+    dcc.Input(id="cw_clm", type="number", placeholder="class weight column number (start from zero)"),
+    dcc.Input(id="n_rows", type="number", placeholder="class weight column number (start from zero)"),
+    dcc.Input(id="porosity", type="number", placeholder="porosity index"),
+    dcc.Input(id="SF_porosity", type="number", placeholder="SF_porosity index"),
+    dcc.Input(id="index_lat", type="number", placeholder="latitute index"),
+    dcc.Input(id="index_long", type="number", placeholder="longitude index"),
+    dcc.Input(id="index_sample_name", type="number", placeholder="sample name index"),
+    dcc.Input(id="sample_date", type="number", placeholder="sample date index"),
+    dcc.Input(id="projection", type="text", placeholder="projection ex: epsg:3857"),
+    html.Button("run", id="btn_run"),
+    dcc.Store(id="store_manual_inputs"),
+
+    # map
     dcc.Graph(id="map"),
+
+    # files upload
     dcc.Upload(  # drop and drag upload area for inputing files
         id='upload-data',
         children=html.Div([
@@ -45,12 +65,14 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         style=style_upload,
         multiple=True  # Allow multiple files to be uploaded
     ),
+
     # html.Div(id='output-div'),
-    html.Div(id='output-messages')
+    html.Div(id='output-messages'),
+
 ])
 
 
-def parse_contents(contents, filename, date):
+def parse_contents(contents, filename, date, input):
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
@@ -93,13 +115,29 @@ def parse_contents(contents, filename, date):
             lat, long = None, None
             pass
 
-        metadata = [samplename, sampledate, (lat, long)]
+        # get porosity
+        try:
+            porosity = dff.iat[input["porosity"][0], input["porosity"][1]]
+        except Exception as e:
+            porosity = None
+            print(e)
+            pass
+
+        # get sf_porosity
+        try:
+            sf_porosity = dff.iat[input["SF_porosity"][0], input["SF_porosity"][1]]
+        except Exception as e:
+            sf_porosity = 6.1  # default for rounded sediments
+            print(e)
+            pass
+
+        metadata = [samplename, sampledate, (lat, long), porosity, sf_porosity]
 
         # Rename and standardize the Grain Size dataframe
         dff_gs.rename(columns={dff_gs.columns[0]: "Grain Sizes [mm]", dff_gs.columns[1]: "Fraction Mass [g]"},
                       inplace=True)
 
-        analyzer = StatisticalAnalyzer(sieving_df=dff_gs, metadata=metadata)
+        analyzer = StatisticalAnalyzer(input=input, sieving_df=dff_gs, metadata=metadata)
 
     except Exception as e:
         print(e)
@@ -114,8 +152,9 @@ def parse_contents(contents, filename, date):
 @app.callback(Output('output-messages', 'children'),
               Input('upload-data', 'contents'),
               State('upload-data', 'filename'),
-              State('upload-data', 'last_modified'))
-def update_output(list_of_contents, list_of_names, list_of_dates):
+              State('upload-data', 'last_modified'),
+              Input("store_manual_inputs", 'data'))
+def update_output(list_of_contents, list_of_names, list_of_dates, input):
     if list_of_contents is not None:
         df_global = pd.DataFrame()
         children = []
@@ -124,7 +163,7 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
         # iterating through files and appending reading messages as well as
         # analysis objects (analyzers)
         for c, n, d in zip(list_of_contents, list_of_names, list_of_dates):
-            from_parsing = parse_contents(c, n, d)
+            from_parsing = parse_contents(c, n, d, input)
             children.append(from_parsing[1])
             analyzers.append(from_parsing[0])
         # append all information from the list of analyzers into a global df
@@ -140,7 +179,6 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
             dcc.Download(id="download-dataframe-csv"),
         ])
         )
-        print("data2")
 
         return children
 
@@ -152,7 +190,6 @@ def update_output(list_of_contents, list_of_names, list_of_dates):
     prevent_initial_call=True,
 )
 def func(data, n_clicks):
-    print(data)
     dataframe_global = pd.DataFrame(data=data["data"], columns=data["columns"])
     return dcc.send_data_frame(dataframe_global.to_csv, "overall_statistics.csv")
 
@@ -166,6 +203,40 @@ def update_figure(data):
     fig.update_layout(transition_duration=500)
 
     return fig
+
+
+@app.callback(
+    Output("store_manual_inputs", "data"),
+    State('header', 'value'),
+    State('gs_clm', 'value'),
+    State('cw_clm', 'value'),
+    State('n_rows', 'value'),
+    State('porosity', 'value'),
+    State('SF_porosity', 'value'),
+    State('index_lat', 'value'),
+    State('index_long', 'value'),
+    State('index_sample_name', 'value'),
+    State('sample_date', 'value'),
+    State('projection', 'value'),
+    Input("btn_run", "n_clicks"),
+)
+def save_inputs(header, gs_clm, cw_clm, n_rows, porosity,
+                sf_porosity, index_lat, index_lon,
+                sample_name_index, sample_date_index,
+                projection, clicks):
+    # transform float values into list
+    porosity_index = list(map(int, str(porosity).split("."))) if porosity is not None else None
+    sf_porosity_index = list(map(int, str(sf_porosity).split("."))) if sf_porosity is not None else None
+    lat_index = list(map(int, str(index_lat).split("."))) if index_lat is not None else None
+    lon_index = list(map(int, str(index_lon).split("."))) if index_lon is not None else None
+    name_index = list(map(int, str(sample_name_index).split("."))) if sample_name_index is not None else None
+    date_index = list(map(int, str(sample_date_index).split("."))) if sample_date_index is not None else None
+
+    # create dictionary with all inputs
+    input = dict(header=header, gs_clm=gs_clm, cw_clm=cw_clm, n_rows=n_rows, porosity=porosity_index,
+                 SF_porosity=sf_porosity_index, index_lat=lat_index, index_long=lon_index,
+                 index_sample_name=name_index, index_sample_date=date_index, projection=projection)
+    return input
 
 
 # @app.callback(Output('output-div', 'children'),

@@ -53,7 +53,27 @@ def extract_df(dic=input, file=None):
         print(e)
         pass
 
-    metadata = [samplename, sampledate, (lat, long)]
+    # get porosity
+    try:
+        porosity = dff.iat[dic["porosity"][0], dic["porosity"][1]]
+    except Exception as e:
+        logging.error("Index for porosity not recognized, "
+                      "assigning None User defined porosity.")
+        porosity = None
+        print(e)
+        pass
+
+    # get sf_porosity
+    try:
+        sf_porosity = dff.iat[dic["SF_porosity"][0], dic["SF_porosity"][1]]
+    except Exception as e:
+        logging.error("Index for sf_porosity not recognized, "
+                      "assigning 6.1 which corresponds to rounded sediments.")
+        sf_porosity = 6.1  # default for rounded sediments
+        print(e)
+        pass
+
+    metadata = [samplename, sampledate, (lat, long), porosity, sf_porosity]
 
     # Rename and standardize the Grain Size dataframe
     dff_gs.rename(columns={dff_gs.columns[0]: "Grain Sizes [mm]", dff_gs.columns[1]: "Fraction Mass [g]"},
@@ -133,8 +153,8 @@ def print_excel(df):
     df.to_excel("plot/global_dataframe.xlsx")
     pass
 
-
-def create_map(df, projection=input["projection"]):
+##TODO update projeciton so that it works for any projection
+def create_map(df, projection="epsg:3857"):
     """
     create a scatter map based on the dataframe
     :param df:
@@ -188,3 +208,6 @@ def convert_coordinates(df, projection):
         iter = +1
 
     return df
+
+
+

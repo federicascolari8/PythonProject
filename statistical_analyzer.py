@@ -11,12 +11,13 @@ class StatisticalAnalyzer:
     A class for computing statistical sedimentological parameters using sieving datasets
     """
 
-    def __init__(self, sieving_df=None, metadata=None):
+    def __init__(self, input=None, sieving_df=None, metadata=None):
         """
         :param sieving_df: Pandas Dataframe containing the sieving results of a sediment sample
         """
 
         # Attributes
+        self.input = input
         self.original_df = sieving_df
         self.cumulative_df = pd.DataFrame()
         self.statistics_df = pd.DataFrame()
@@ -25,6 +26,8 @@ class StatisticalAnalyzer:
         self.samplename = metadata[0]
         self.sampledate = metadata[1]
         self.coords = metadata[2]
+        self.porosity = metadata[3]
+        self.sf_porosity = metadata[4]
 
         # Methods
         self.compute_cumulative_df()
@@ -309,7 +312,7 @@ class StatisticalAnalyzer:
 
     def __porosity_user(self):
 
-        self.porosity_conductivity_df.at[4, "Porosity"] = input["porosity"]
+        self.porosity_conductivity_df.at[4, "Porosity"] = self.porosity
 
         pass
 
@@ -355,7 +358,7 @@ class StatisticalAnalyzer:
                 kozeny_df["Grain Sizes [mm]"] / 10) ** 0.595
         kozeny_df["Deff_i [cm]"] = kozeny_df["Percentage Fraction [%]"] / kozeny_df["D_ave_i [cm]"]
         Deff_i_cm = 100 / kozeny_df["Deff_i [cm]"].sum()
-        SF = input["SF_porosity"]
+        SF = self.sf_porosity
         e = porosity / (1 - porosity)
         cte = 19900
 
