@@ -1,7 +1,7 @@
 import base64
 import datetime
 import io
-
+import interac_plotter
 import dash
 from dash.dependencies import Input, Output, State
 from dash import dcc, Input, Output, State, html
@@ -46,7 +46,8 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         multiple=True  # Allow multiple files to be uploaded
     ),
     # html.Div(id='output-div'),
-    html.Div(id='output-messages')
+    html.Div(id='output-messages'),
+    dcc.Graph(id='output-cumcurves')
 ])
 
 
@@ -164,9 +165,18 @@ def update_figure(data):
     df = pd.DataFrame(data=data["data"], columns=data["columns"])
     fig = create_map(df)
     fig.update_layout(transition_duration=500)
-
     return fig
 
+
+@app.callback(
+    Output('output-cumcurves', 'figure'),
+    Input('stored-data', 'data'))
+def update_figure(data):
+    df_global = pd.DataFrame(data=data["data"], columns=data["columns"])
+    i_plotter = interac_plotter.InteracPlotter(df_global)
+    fig = i_plotter.plot_histogram(param='d16')
+    # fig.update_layout(transition_duration=500)
+    return fig
 
 # @app.callback(Output('output-div', 'children'),
 #               Input('submit-button', 'n_clicks'),
