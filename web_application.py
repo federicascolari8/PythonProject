@@ -1,7 +1,7 @@
 import base64
 import datetime
 import io
-
+import interac_plotter
 import dash
 from dash.dependencies import Input, Output, State
 from dash import dcc, Input, Output, State, html
@@ -38,17 +38,17 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
     html.Br(),
 
     # manual inputs
-    dcc.Input(id="header", type="number", placeholder="table's header"),
-    dcc.Input(id="gs_clm", type="number", placeholder="grain sizes table column number (start from zero)"),
-    dcc.Input(id="cw_clm", type="number", placeholder="class weight column number (start from zero)"),
-    dcc.Input(id="n_rows", type="number", placeholder="class weight column number (start from zero)"),
-    dcc.Input(id="porosity", type="number", placeholder="porosity index"),
-    dcc.Input(id="SF_porosity", type="number", placeholder="SF_porosity index"),
-    dcc.Input(id="index_lat", type="number", placeholder="latitute index"),
-    dcc.Input(id="index_long", type="number", placeholder="longitude index"),
-    dcc.Input(id="index_sample_name", type="number", placeholder="sample name index"),
-    dcc.Input(id="sample_date", type="number", placeholder="sample date index"),
-    dcc.Input(id="projection", type="text", placeholder="projection ex: epsg:3857"),
+    dcc.Input(id="header", type="number", placeholder="table's header", value=9),
+    dcc.Input(id="gs_clm", type="number", placeholder="grain sizes table column number (start from zero)", value=1),
+    dcc.Input(id="cw_clm", type="number", placeholder="class weight column number (start from zero)", value=2),
+    dcc.Input(id="n_rows", type="number", placeholder="class weight column number (start from zero)", value=16),
+    dcc.Input(id="porosity", type="number", placeholder="porosity index", value=7.8),
+    dcc.Input(id="SF_porosity", type="number", placeholder="SF_porosity index", value=7.9),
+    dcc.Input(id="index_lat", type="number", placeholder="latitute index", value=5.8),
+    dcc.Input(id="index_long", type="number", placeholder="longitude index", value=5.9),
+    dcc.Input(id="index_sample_name", type="number", placeholder="sample name index", value=3.8),
+    dcc.Input(id="sample_date", type="number", placeholder="sample date index", value=3.9),
+    dcc.Input(id="projection", type="text", placeholder="projection ex: epsg:3857", value="epsg:3857"),
     html.Button("run", id="btn_run"),
     dcc.Store(id="store_manual_inputs"),
 
@@ -68,7 +68,7 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
 
     # html.Div(id='output-div'),
     html.Div(id='output-messages'),
-
+    dcc.Graph(id='output-cumcurves')
 ])
 
 
@@ -201,7 +201,6 @@ def update_figure(data):
     df = pd.DataFrame(data=data["data"], columns=data["columns"])
     fig = create_map(df)
     fig.update_layout(transition_duration=500)
-
     return fig
 
 
@@ -238,6 +237,16 @@ def save_inputs(header, gs_clm, cw_clm, n_rows, porosity,
                  index_sample_name=name_index, index_sample_date=date_index, projection=projection)
     return input
 
+
+@app.callback(
+    Output('output-cumcurves', 'figure'),
+    Input('stored-data', 'data'))
+def update_figure(data):
+    df_global = pd.DataFrame(data=data["data"], columns=data["columns"])
+    i_plotter = interac_plotter.InteracPlotter(df_global)
+    fig = i_plotter.plot_histogram(param='d16')
+    # fig.update_layout(transition_duration=500)
+    return fig
 
 # @app.callback(Output('output-div', 'children'),
 #               Input('submit-button', 'n_clicks'),
