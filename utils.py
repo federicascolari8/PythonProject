@@ -153,6 +153,7 @@ def print_excel(df):
     df.to_excel("plot/global_dataframe.xlsx")
     pass
 
+
 ##TODO update projeciton so that it works for any projection
 def create_map(df, projection="epsg:3857"):
     """
@@ -170,9 +171,26 @@ def create_map(df, projection="epsg:3857"):
                             hover_name="sample name",
                             hover_data=df.columns[4:22],
                             zoom=11)
+    # Open street map mapbox/works for everywhere
     fig.update_layout(
         mapbox_style="open-street-map",
     )
+
+    # USGS mapbox/works is a very good resolution for the US
+    # but not for EU.
+
+    # fig.update_layout(
+    #     mapbox_style="white-bg",
+    #     mapbox_layers=[
+    #         {
+    #             "below": 'traces',
+    #             "sourcetype": "raster",
+    #             "sourceattribution": "United States Geological Survey",
+    #             "source": [
+    #                 "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"
+    #             ]
+    #         }
+    #     ])
     print(df.columns[4:33])
     print(df)
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
@@ -203,6 +221,3 @@ def convert_coordinates(df, projection):
         iter = +1
 
     return df
-
-
-
