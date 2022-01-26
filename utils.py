@@ -188,22 +188,17 @@ def convert_coordinates(df, projection):
     :return:
     """
     # import projections
-    inproj = Proj(projection)  # Pseudo mercator
-    # inProj = Proj('epsg:25832') # any other projection (solution without correciton)
-    outproj = Proj('epsg:4326')  # WGS 83 degrees
+    inproj = CRS.from_string(projection)  # Pseudo mercator
+    outproj = CRS.from_string('epsg:4326')  # WGS 83 degrees
 
     iter = 0
-    for x1, y1 in df[["lat", "lon"]].itertuples(index=False):
+    for y1, x1 in df[["lat", "lon"]].itertuples(index=False):
         x2, y2 = transform(inproj, outproj, x1, y1)
         print(x2, y2)
 
-        # correction from epsg 3857
-        df.at[iter, "lat"] = y2 - 6.9752575
-        df.at[iter, "lon"] = x2 + 0.098607
-
-        # # solution with out correction
-        # df.at[iter, "lat"] = y2
-        # df.at[iter, "lon"] = x2
+        # solution with out correction
+        df.at[iter, "lat"] = x2
+        df.at[iter, "lon"] = y2
 
         iter = +1
 

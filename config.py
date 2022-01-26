@@ -19,7 +19,7 @@ try:
     import glob
     import sys
     import os
-    from pyproj import Proj, transform
+    from pyproj import Proj, transform, CRS
     import plotly.express as px
     import math
 except:
