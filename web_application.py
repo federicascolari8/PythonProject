@@ -1,16 +1,11 @@
 import base64
-import datetime
 import io
 import interac_plotter
 import dash
-from dash.dependencies import Input, Output, State
 from dash import dcc, Input, Output, State, html
-import plotly.express as px
-import openpyxl
 from statistical_analyzer import *
 from utils import *
 
-import pandas as pd
 from config import *
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -30,10 +25,17 @@ style_upload = {
 
 app.layout = html.Div([  # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
     html.H1("Sediment Analyst", style={'text-align': 'center'}),  # header
-    dcc.Textarea(  # Web description
-        id='text-intro',
-        value='A web application for interactive sedimentological analyses',
-        style={'width': '100%', 'height': 100}
+    dcc.Markdown(  # Web description
+        '''
+        #### Interactive sedimentological analyses
+        
+        
+        Enter below the information regarding your files. When *index* is indicated, enter the
+        __row index__, __column index__, separated by comma (,) in the fields below. For instance, if, in your file, the sample 
+        name lives on the row 0 (first row) and column 2 (third column): type 0,2 in the field *samplename*.
+        The fields are filled in by default according to a standard file sheet, which we made available [here]().
+        
+        '''
     ),
     html.Br(),
 
@@ -42,12 +44,12 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
     dcc.Input(id="gs_clm", type="number", placeholder="grain sizes table column number (start from zero)", value=1),
     dcc.Input(id="cw_clm", type="number", placeholder="class weight column number (start from zero)", value=2),
     dcc.Input(id="n_rows", type="number", placeholder="class weight column number (start from zero)", value=16),
-    dcc.Input(id="porosity", type="number", placeholder="porosity index", value=7.8),
-    dcc.Input(id="SF_porosity", type="number", placeholder="SF_porosity index", value=7.9),
-    dcc.Input(id="index_lat", type="number", placeholder="latitute index", value=5.8),
-    dcc.Input(id="index_long", type="number", placeholder="longitude index", value=5.9),
+    dcc.Input(id="porosity", type="number", placeholder="porosity index", value=2.4),
+    dcc.Input(id="SF_porosity", type="number", placeholder="SF_porosity index", value=2.5),
+    dcc.Input(id="index_lat", type="number", placeholder="latitute index", value=5.2),
+    dcc.Input(id="index_long", type="number", placeholder="longitude index", value=5.3),
     dcc.Input(id="index_sample_name", type="number", placeholder="sample name index", value=3.8),
-    dcc.Input(id="sample_date", type="number", placeholder="sample date index", value=3.9),
+    dcc.Input(id="index_sample_date", type="number", placeholder="sample date index", value=6.2),
     dcc.Input(id="projection", type="text", placeholder="projection ex: epsg:3857", value="epsg:3857"),
     html.Button("run", id="btn_run"),
     dcc.Store(id="store_manual_inputs"),
@@ -215,7 +217,7 @@ def update_figure(data):
     State('index_lat', 'value'),
     State('index_long', 'value'),
     State('index_sample_name', 'value'),
-    State('sample_date', 'value'),
+    State('index_sample_date', 'value'),
     State('projection', 'value'),
     Input("btn_run", "n_clicks"),
 )

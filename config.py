@@ -38,13 +38,13 @@ def get_input():
              "gs_clm": 1,  # grain size column index (start with 0)
              "cw_clm": 2,  # class weight column index (start with 0)
              "n_rows": 16,  # number of rows (available class weights)
-             "porosity": [7, 8],  # option to give porosity manually
-             "SF_porosity": [7, 9],  # default for rounded sediment
-             "index_lat": [5, 8],  # coordinates of the sample (tuple variable)
-             "index_long": [5, 9],
+             "porosity": [2, 4],  # option to give porosity manually
+             "SF_porosity": [2, 5],  # default for rounded sediment
+             "index_lat": [5, 2],  # coordinates of the sample (tuple variable)
+             "index_long": [5, 3],
              "folder_path": "datasets",
-             "index_sample_name": [3, 8],  # index of excel sheet that contains the name of the sample
-             "index_sample_date": [3, 9],  # index of excel sheet that contains date that the sample was collected
+             "index_sample_name": [6, 2],  # index of excel sheet that contains the name of the sample
+             "index_sample_date": [3, 2],  # index of excel sheet that contains date that the sample was collected
              "projection": "epsg:3857",  # add projection
              }
     return input
