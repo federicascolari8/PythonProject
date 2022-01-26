@@ -33,7 +33,7 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         Enter below the information regarding your files. When *index* is indicated, enter the
         __row index__, __column index__, separated by comma (,) in the fields below. For instance, if, in your file, the sample 
         name lives on the row 0 (first row) and column 2 (third column): type 0,2 in the field *samplename*.
-        The fields are filled in by default according to a standard file sheet, which we made available [here]().
+        The fields are filled in by default according to a standard file sheet, which we made available [here](https://github.com/federicascolari8/PythonProject/blob/main/templates/template-sample-file.xlsx).
         
         '''
     ),
