@@ -5,6 +5,10 @@ __pycache__/
 .idea
 .DS_Store
 
+# User-defined
+*/plot/**
+*/stuff/**
+
 # C extensions
 *.so
 
