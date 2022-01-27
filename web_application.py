@@ -52,10 +52,9 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
     dcc.Input(id="index_sample_date", type="number", placeholder="sample date index", value=4.2),
     dcc.Input(id="projection", type="text", placeholder="projection ex: epsg:3857", value="epsg:3857"),
     html.Button("run", id="btn_run"),
-    dcc.Store(id="store_manual_inputs"),
 
-    # map
-    dcc.Graph(id="map"),
+    # store input
+    dcc.Store(id="store_manual_inputs"),
 
     # files upload
     dcc.Upload(  # drop and drag upload area for inputing files
@@ -68,9 +67,22 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         multiple=True  # Allow multiple files to be uploaded
     ),
 
+    # store global dataframe
+    dcc.Store(id='stored-data'),
+
     # html.Div(id='output-div'),
     html.Div(id='output-messages'),
-    dcc.Graph(id='output-cumcurves')
+
+    # drop box with sample names
+    html.Div(id="dropdown-campaign_id"),
+    html.Br(),
+
+    # map
+    html.Div(id="div-map"),
+
+    # histogram
+    html.Div(id="div-graphs"),
+
 ])
 
 
@@ -152,11 +164,15 @@ def parse_contents(contents, filename, date, input):
 
 # callback function for the Upload box
 @app.callback(Output('output-messages', 'children'),
-              Input('upload-data', 'contents'),
+              Output('stored-data', 'data'),
+              State('upload-data', 'contents'),
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'),
-              Input("store_manual_inputs", 'data'))
-def update_output(list_of_contents, list_of_names, list_of_dates, input):
+              State("store_manual_inputs", 'data'),
+              Input("btn_run", "n_clicks"),
+              prevent_initial_call=True,
+              )
+def update_output(list_of_contents, list_of_names, list_of_dates, input, click):
     if list_of_contents is not None:
         df_global = pd.DataFrame()
         children = []
@@ -166,7 +182,7 @@ def update_output(list_of_contents, list_of_names, list_of_dates, input):
         # analysis objects (analyzers)
         for c, n, d in zip(list_of_contents, list_of_names, list_of_dates):
             from_parsing = parse_contents(c, n, d, input)
-            children.append(from_parsing[1])
+            # children.append(from_parsing[1])
             analyzers.append(from_parsing[0])
         # append all information from the list of analyzers into a global df
         for inter_analyzer in analyzers:
@@ -176,11 +192,11 @@ def update_output(list_of_contents, list_of_names, list_of_dates, input):
         # return children
         data2 = df_global.to_dict("split")
         children.append(html.Div([
-            dcc.Store(id='stored-data', data=data2),
             html.Button("Download Summary Statistics", id="btn_download"),
             dcc.Download(id="download-dataframe-csv"),
         ])
         )
+        children.append(data2)
 
         return children
 
@@ -197,13 +213,15 @@ def func(data, n_clicks):
 
 
 @app.callback(
-    Output('map', 'figure'),
-    Input('stored-data', 'data'))
+    Output('div-map', 'children'),
+    Input('stored-data', 'data'),
+    prevent_initial_call=True
+)
 def update_figure(data):
     df = pd.DataFrame(data=data["data"], columns=data["columns"])
     fig = create_map(df)
     fig.update_layout(transition_duration=500)
-    return fig
+    return dcc.Graph(id="map", figure=fig)
 
 
 @app.callback(
@@ -241,27 +259,43 @@ def save_inputs(header, gs_clm, cw_clm, n_rows, porosity,
 
 
 @app.callback(
-    Output('output-cumcurves', 'figure'),
-    Input('stored-data', 'data'))
+    Output('div-graphs', 'children'),
+    Input('stored-data', 'data'),
+    prevent_initial_call=True)
 def update_figure(data):
     df_global = pd.DataFrame(data=data["data"], columns=data["columns"])
     i_plotter = interac_plotter.InteracPlotter(df_global)
     fig = i_plotter.plot_histogram(param='d16')
     # fig.update_layout(transition_duration=500)
-    return fig
+    return [dcc.Graph(id="output-histogram",
+                      style={'display': 'inline-table'}
+                      ),
+            dcc.Graph(id='output-histogram',
+                      figure=fig,
+                      style={'display': 'inline-table'}
+                      )
 
-# @app.callback(Output('output-div', 'children'),
-#               Input('submit-button', 'n_clicks'),
-#               State('stored-data', 'data'),
-#               State('xaxis-data', 'value'),
-#               State('yaxis-data', 'value'))
-# def make_graphs(n, data, x_data, y_data):
-#     if n is None:
-#         return dash.no_update
-#     else:
-#         bar_fig = px.bar(data, x=x_data, y=y_data)
-#         # print(data)
-#         return dcc.Graph(figure=bar_fig)
+            ]
+
+
+@app.callback(Output("dropdown-campaign_id", "children"),
+              Input("btn_run", "n_clicks"),
+              State('stored-data', 'data'),
+              prevent_initial_call=True  # prevents that this callback is ran
+              # before the inputs (outputs of previous callbacks) are available
+              )
+def update_campaign_id(n_clicks, data):  # n_clicks is mandatory even if not used
+    df = pd.DataFrame(data=data["data"], columns=data["columns"])
+    samples = df["sample name"].tolist()
+    print(samples)
+
+    return dcc.Dropdown(id="campaign_id",
+                        options=[{"label": x, "value": x}
+                                for x in samples],
+                        value=samples,
+                        multi=True
+                        )
+
 
 
 if __name__ == '__main__':
