@@ -5,7 +5,7 @@ __pycache__/
 .idea
 .DS_Store
 
-# User-defined
+# User-defined ignoring folders
 plot/
 stuff/
 
