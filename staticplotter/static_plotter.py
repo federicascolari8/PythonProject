@@ -13,7 +13,7 @@ class StaticPlotter:
         plt.xscale('log')
         ax.grid(which='both', alpha=0.5)
         ax.set_ylim(bottom=0, top=100)
-        plt.plot(self.cum_df.iloc[:, 0], self.cum_df.iloc[:, 3], label=input["sample_name"], color="blue")
+        plt.plot(self.cum_df.iloc[:, 0], self.cum_df.iloc[:, 3], label=self.actual_analyzer.samplename, color="blue")
 
         self.__set_primary_axis(ax)
         ax2 = ax.twiny()
@@ -63,5 +63,5 @@ class StaticPlotter:
         ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%1.2f'))
         ax.set_xlim(left=0.031, right=250)
         ax.set_xlabel('Grain Size [mm]')
-        ax.set_ylabel('Sieving Fraction [%]')
+        ax.set_ylabel('Percentage [%]')
 

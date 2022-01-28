@@ -1,28 +1,21 @@
-import base64
-import io
-import interac_plotter
-import dash
-from dash import dcc, Input, Output, State, html
-from statistical_analyzer import *
-from utils import *
+""" Module designated for the web application
 
+Author : Beatriz Negreiros
+
+"""
+
+from statisticalanalyzer.utils import *
+from app.apputils import *
 from config import *
+from app.appconfig import *
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+'Instantiates object app of the class Class'
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets,
                 suppress_callback_exceptions=True)
-style_upload = {
-    'width': '100%',
-    'height': '60px',
-    'lineHeight': '60px',
-    'borderWidth': '1px',
-    'borderStyle': 'dashed',
-    'borderRadius': '5px',
-    'textAlign': 'center',
-    'margin': '10px'
-}
 
+# App layout
 app.layout = html.Div([  # this code section taken from Dash docs https://dash.plotly.com/dash-core-components/upload
     html.H1("Sediment Analyst", style={'text-align': 'center'}),  # header
     dcc.Markdown(  # Web description
@@ -31,9 +24,10 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
         
         
         Enter below the information regarding your files. When *index* is indicated, enter the
-        __row index__, __column index__, separated by comma (,) in the fields below. For instance, if, in your file, the sample 
-        name lives on the row 0 (first row) and column 2 (third column): type 0,2 in the field *samplename*.
-        The fields are filled in by default according to a standard file sheet, which we made available [here](https://github.com/federicascolari8/PythonProject/blob/main/templates/template-sample-file.xlsx).
+        __row index__, __column index__, separated by comma (,) in the fields below. For instance, if, in your file, the 
+        sample name lives on the row 0 (first row) and column 2 (third column): type 0,2 in the field *samplename*.
+        The fields are filled in by default according to a standard file sheet, which we made available 
+        [here](https://github.com/federicascolari8/PythonProject/blob/main/templates/template-sample-file.xlsx).
         
         '''
     ),
@@ -93,83 +87,7 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
 ])
 
 
-def parse_contents(contents, filename, date, input):
-    content_type, content_string = contents.split(',')
-
-    decoded = base64.b64decode(content_string)
-    try:
-        if 'csv' in filename:
-            # Assume that the user uploaded a CSV file
-            df = pd.read_csv(
-                io.StringIO(decoded.decode('utf-8')))
-        elif 'xls' in filename:
-            # Assume that the user uploaded an excel file
-            df = pd.read_excel(io.BytesIO(decoded), engine="openpyxl", header=None)
-
-        # clean dataset
-        dff = df.copy()
-        columns_to_get = [input["gs_clm"], input["cw_clm"]]
-        dff_gs = dff.iloc[input["header"]: input["header"] + input["n_rows"], columns_to_get]
-        dff_gs.reset_index(inplace=True, drop=True)
-        dff_gs = dff_gs.astype(float)
-
-        # Get metadata from the dataframe
-        # get sample name
-        try:
-            samplename = dff.iat[input["index_sample_name"][0], input["index_sample_name"][1]]
-        except:
-            samplename = None
-            pass
-
-        # get sample date
-        try:
-            sampledate = dff.iat[input["index_sample_date"][0], input["index_sample_date"][1]]
-        except:
-            sampledate = None
-            pass
-
-        # get sample coordinates
-        try:
-            lat = dff.iat[input["index_lat"][0], input["index_lat"][1]]
-            long = dff.iat[input["index_long"][0], input["index_long"][1]]
-        except:
-            lat, long = None, None
-            pass
-
-        # get porosity
-        try:
-            porosity = dff.iat[input["porosity"][0], input["porosity"][1]]
-        except Exception as e:
-            porosity = None
-            print(e)
-            pass
-
-        # get sf_porosity
-        try:
-            sf_porosity = dff.iat[input["SF_porosity"][0], input["SF_porosity"][1]]
-        except Exception as e:
-            sf_porosity = 6.1  # default for rounded sediments
-            print(e)
-            pass
-
-        metadata = [samplename, sampledate, (lat, long), porosity, sf_porosity]
-
-        # Rename and standardize the Grain Size dataframe
-        dff_gs.rename(columns={dff_gs.columns[0]: "Grain Sizes [mm]", dff_gs.columns[1]: "Fraction Mass [g]"},
-                      inplace=True)
-
-        analyzer = StatisticalAnalyzer(input=input, sieving_df=dff_gs, metadata=metadata)
-
-    except Exception as e:
-        print(e)
-        return html.Div([filename,
-                         ': There was an error processing the file. Ensure that your file does not contain too many columns (< 15).'
-                         ])
-
-    return analyzer, html.Div([filename, ': File successfully read'])
-
-
-# callback function for the Upload box
+# Callback for the Upload (Drag and Drop or Select Files) box
 @app.callback(Output('output-messages', 'children'),
               Output('stored-data', 'data'),
               Input('upload-data', 'contents'),
@@ -207,7 +125,7 @@ def update_output(list_of_contents, list_of_names, list_of_dates, input, click):
 
         return children
 
-
+# Callback for button for downloading summary statistics of all input samples
 @app.callback(
     Output("download-dataframe-csv", "data"),
     State('stored-data', 'data'),
@@ -219,6 +137,7 @@ def func(data, n_clicks):
     return dcc.send_data_frame(dataframe_global.to_csv, "overall_statistics.csv")
 
 
+# Callback for creating map with sample locations and computed sed. statistics
 @app.callback(
     Output('div-map', 'children'),
     State('stored-data', 'data'),
@@ -232,6 +151,7 @@ def update_figure(data, samples):
     return dcc.Graph(id="map", figure=fig)
 
 
+# Callback for storing input dictionary necessary to read the user-inputed files
 @app.callback(
     Output("store_manual_inputs", "data"),
     State('header', 'value'),
@@ -267,6 +187,7 @@ def save_inputs(header, gs_clm, cw_clm, n_rows, porosity,
     return input
 
 
+# Callback for plotting histogram of the statistic; uses the class InteracPlotter
 @app.callback(
     Output('div-histogram', 'children'),
     State('stored-data', 'data'),
@@ -293,6 +214,7 @@ def update_histogram(data, samples, stat_value):
                      )
 
 
+# Callback for updating campaign information (or id)
 @app.callback(Output("dropdown-campaign_id", "children"),
               Input("btn_run", "n_clicks"),
               State('stored-data', 'data'),
@@ -311,6 +233,7 @@ def update_campaign_id(n_clicks, data):  # n_clicks is mandatory even if not use
                         )
 
 
+# Callback for dropdown for the user to select the desired statistic
 @app.callback(Output("div-stat-drop", "children"),
               Input("btn_run", "n_clicks"),
               State('stored-data', 'data'),
@@ -335,7 +258,6 @@ def update_stat_drop(n_clicks, data):
     prevent_initial_call=True
 )
 def update_gsd(data, samples):
-
     # save into dataframe
     df = pd.DataFrame(data=data["data"], columns=data["columns"])
 
@@ -349,7 +271,6 @@ def update_gsd(data, samples):
                      figure=fig,
                      style={'display': 'inline-table'},
                      )
-
 
 
 if __name__ == '__main__':

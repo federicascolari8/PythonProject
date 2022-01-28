@@ -11,20 +11,23 @@ Functions:
 
 """
 # from config import *
-from statistical_analyzer import StatisticalAnalyzer
-from static_plotter import StaticPlotter
-from utils import *
+from statisticalanalyzer.statistical_analyzer import StatisticalAnalyzer
+from statisticalanalyzer.utils import *
+from staticplotter.static_plotter import *
 
 
 def main():
-    # initiate dataframe to hold all the  the samples statistics
+    # Instantiate sdataframe to hold all the  the samples statistics
     df_global = pd.DataFrame()
 
-    # input without been global variable (necessary test for GUI)
+    # Input indexes without been global variable (same function used by the web application)
     input_local = get_input()
 
+    # List of files in the user-selected folder (given in the config)
+    files_to_loop = find_files(input_local["folder_path"])
+
     # loop through all the samples and compute corresponding
-    for i, file_name in enumerate(find_files(input_local["folder_path"])):
+    for i, file_name in enumerate(files_to_loop):
         # extract the sieving table from excel or csv
         sieving_df, metadata = extract_df(dic=input_local, file=file_name)
 
@@ -37,13 +40,13 @@ def main():
                                   df=df_global
                                   )
 
-        # # call the class StaticPlotter
-        # plotter = StaticPlotter(analyzer)
-        #
-        # # plot the cumulative grain size distribution curve
-        # plotter.cum_plotter(file_name + ".png")
+        # call the class StaticPlotter
+        plotter = StaticPlotter(analyzer)
 
-    print_excel(df=df_global)
+        # plot the cumulative grain size distribution curve
+        plotter.cum_plotter('plot/' + file_name[8:-5] + '.png')
+
+    df_global.to_excel("plot/global_dataframe.xlsx")
 
     pass
 

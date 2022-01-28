@@ -1,6 +1,7 @@
 """ Module designated for class StatisticalAnalyzer
 
 Author : Beatriz Negreiros
+
 """
 
 from config import *

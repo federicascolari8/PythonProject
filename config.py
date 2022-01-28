@@ -24,14 +24,15 @@ try:
     import math
 except:
     print(
-        "Error importing necessary packages. Required packages")
+        "Error importing necessary packages")
 
 # Dataset path
 # sieving_data_add = Path(os.path.abspath(os.getcwd()) + "/datasets/KB08_FC_1-2_nachher.xlsx")
 sieving_data_add = "datasets/KB08_FC_1-2_nachher.xlsx"
 
-# head and columns of the Grain Size (GS) and Class Weight (CW)
 
+# USER INPUTS:
+# head and columns of the Grain Size (GS) and Class Weight (CW)
 def get_input():
     input = {"sample_name": None,
              "header": 9,  # number of lines with a header before the dataset
