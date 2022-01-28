@@ -79,9 +79,16 @@ app.layout = html.Div([  # this code section taken from Dash docs https://dash.p
 
     # map
     html.Div(id="div-map"),
+    html.Br(),
+
+    # dropdown with type of statistics
+    html.Div(id="div-stat-drop"),
 
     # histogram
-    html.Div(id="div-graphs"),
+    html.Div(id="div-histogram"),
+
+    # grain size distribution
+    html.Div(id="div-gsd"),
 
 ])
 
@@ -165,7 +172,7 @@ def parse_contents(contents, filename, date, input):
 # callback function for the Upload box
 @app.callback(Output('output-messages', 'children'),
               Output('stored-data', 'data'),
-              State('upload-data', 'contents'),
+              Input('upload-data', 'contents'),
               State('upload-data', 'filename'),
               State('upload-data', 'last_modified'),
               State("store_manual_inputs", 'data'),
@@ -214,12 +221,13 @@ def func(data, n_clicks):
 
 @app.callback(
     Output('div-map', 'children'),
-    Input('stored-data', 'data'),
+    State('stored-data', 'data'),
+    Input("campaign_id", "value"),
     prevent_initial_call=True
 )
-def update_figure(data):
+def update_figure(data, samples):
     df = pd.DataFrame(data=data["data"], columns=data["columns"])
-    fig = create_map(df)
+    fig = create_map(df=df, samples=samples)
     fig.update_layout(transition_duration=500)
     return dcc.Graph(id="map", figure=fig)
 
@@ -238,6 +246,7 @@ def update_figure(data):
     State('index_sample_date', 'value'),
     State('projection', 'value'),
     Input("btn_run", "n_clicks"),
+    # prevent_initial_call=True,
 )
 def save_inputs(header, gs_clm, cw_clm, n_rows, porosity,
                 sf_porosity, index_lat, index_lon,
@@ -259,23 +268,29 @@ def save_inputs(header, gs_clm, cw_clm, n_rows, porosity,
 
 
 @app.callback(
-    Output('div-graphs', 'children'),
-    Input('stored-data', 'data'),
-    prevent_initial_call=True)
-def update_figure(data):
-    df_global = pd.DataFrame(data=data["data"], columns=data["columns"])
-    i_plotter = interac_plotter.InteracPlotter(df_global)
-    fig = i_plotter.plot_histogram(param='d16')
-    # fig.update_layout(transition_duration=500)
-    return [dcc.Graph(id="output-histogram",
-                      style={'display': 'inline-table'}
-                      ),
-            dcc.Graph(id='output-histogram',
-                      figure=fig,
-                      style={'display': 'inline-table'}
-                      )
+    Output('div-histogram', 'children'),
+    State('stored-data', 'data'),
+    Input("campaign_id", "value"),
+    Input("statistics_id", "value"),
+    prevent_initial_call=True
+)
+def update_histogram(data, samples, stat_value):
+    # save into dataframe
+    df = pd.DataFrame(data=data["data"], columns=data["columns"])
 
-            ]
+    # filter samples given sample name
+    df = df[df["sample name"].isin(samples)]
+
+    # filter samples given statistic
+    df = df.iloc[:, 4:23]
+
+    i_plotter = interac_plotter.InteracPlotter(df)
+    fig = i_plotter.plot_histogram(param=stat_value)
+    # fig.update_layout(transition_duration=500)
+    return dcc.Graph(id='output-histogram',
+                     figure=fig,
+                     style={'display': 'inline-table'}
+                     )
 
 
 @app.callback(Output("dropdown-campaign_id", "children"),
@@ -287,14 +302,53 @@ def update_figure(data):
 def update_campaign_id(n_clicks, data):  # n_clicks is mandatory even if not used
     df = pd.DataFrame(data=data["data"], columns=data["columns"])
     samples = df["sample name"].tolist()
-    print(samples)
 
     return dcc.Dropdown(id="campaign_id",
                         options=[{"label": x, "value": x}
-                                for x in samples],
+                                 for x in samples],
                         value=samples,
                         multi=True
                         )
+
+
+@app.callback(Output("div-stat-drop", "children"),
+              Input("btn_run", "n_clicks"),
+              State('stored-data', 'data'),
+              prevent_initial_call=True,
+              )
+def update_stat_drop(n_clicks, data):
+    df = pd.DataFrame(data=data["data"], columns=data["columns"])
+    statistics = df.columns[4:23].tolist()
+
+    return dcc.Dropdown(id="statistics_id",
+                        options=[{"label": x, "value": x}
+                                 for x in statistics],
+                        value=statistics[0],
+                        multi=False
+                        )
+
+
+@app.callback(
+    Output('div-gsd', 'children'),
+    State('stored-data', 'data'),
+    Input("campaign_id", "value"),
+    prevent_initial_call=True
+)
+def update_gsd(data, samples):
+
+    # save into dataframe
+    df = pd.DataFrame(data=data["data"], columns=data["columns"])
+
+    # filter samples given sample name
+    df = df[df["sample name"].isin(samples)]
+
+    i_plotter_2 = interac_plotter.InteracPlotter(df)
+    fig = i_plotter_2.plot_gsd(samples)
+
+    return dcc.Graph(id="gsd",
+                     figure=fig,
+                     style={'display': 'inline-table'},
+                     )
 
 
 

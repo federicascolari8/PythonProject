@@ -155,16 +155,21 @@ def print_excel(df):
 
 
 ##TODO update projeciton so that it works for any projection
-def create_map(df, projection="epsg:3857"):
+def create_map(df, projection="epsg:3857", samples=None):
     """
     create a scatter map based on the dataframe
     :param df:
     :param projection:
     :return:
     """
+
+    # convert coordinates to input projection
     df = convert_coordinates(df=df,
                              projection=projection)
+    # filter samples given inside dropdown
+    df = df[df["sample name"].isin(samples)]
 
+    # create scatter with Open Street Map
     fig = px.scatter_mapbox(df,
                             lat=df["lat"],
                             lon=df["lon"],
@@ -191,8 +196,6 @@ def create_map(df, projection="epsg:3857"):
     #             ]
     #         }
     #     ])
-    print(df.columns[4:33])
-    print(df)
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
     return fig
@@ -212,7 +215,6 @@ def convert_coordinates(df, projection):
     iter = 0
     for y1, x1 in df[["lat", "lon"]].itertuples(index=False):
         x2, y2 = transform(inproj, outproj, x1, y1)
-        print(x2, y2)
 
         # solution with out correction
         df.at[iter, "lat"] = x2
