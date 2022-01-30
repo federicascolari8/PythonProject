@@ -1,3 +1,10 @@
+""" Module designated for class StaticPlotter
+
+Author : Federica Scolari
+
+"""
+
+
 from config import *
 
 

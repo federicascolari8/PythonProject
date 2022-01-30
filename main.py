@@ -14,10 +14,12 @@ Functions:
 from statisticalanalyzer.statistical_analyzer import StatisticalAnalyzer
 from statisticalanalyzer.utils import *
 from staticplotter.static_plotter import *
+from app import interac_plotter
 
 
 def main():
     # Instantiate sdataframe to hold all the  the samples statistics
+
     df_global = pd.DataFrame()
 
     # Input indexes without been global variable (same function used by the web application)
@@ -47,6 +49,9 @@ def main():
         plotter.cum_plotter('plot/' + file_name[8:-5] + '.png')
 
     df_global.to_excel("plot/global_dataframe.xlsx")
+
+    inter = interac_plotter.InteractivePlotter()
+    inter.cum_gsd_plot()
 
     pass
 
